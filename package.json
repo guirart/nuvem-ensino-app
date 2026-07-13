@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
  "engines": {
-  "node": "22.x"
+  "node": "24.x"
 },
   "dependencies": {
     "@supabase/ssr": "0.12.0",
