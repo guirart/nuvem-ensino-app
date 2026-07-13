@@ -8,6 +8,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
@@ -15,9 +16,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
       - name: Instalar dependências
         run: npm install
+
       - name: Verificar TypeScript
         run: npm run typecheck
+
       - name: Gerar build
         run: npm run build
