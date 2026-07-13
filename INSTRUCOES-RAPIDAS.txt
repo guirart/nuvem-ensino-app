@@ -1,0 +1,35 @@
+NU.V.E.M ENSINO — PASSOS RÁPIDOS
+
+1. Extraia o arquivo ZIP.
+2. Abra a pasta nuvem-ensino-app.
+3. Para testar no computador:
+
+   npm install
+   npm run dev
+
+4. Para enviar ao GitHub:
+
+   git init
+   git branch -M main
+   git remote add origin https://github.com/guirart/nuvem-ensino-app.git
+   git add .
+   git commit -m "feat: estrutura inicial da plataforma NU.V.E.M Ensino"
+   git push -u origin main
+
+5. Na Vercel:
+   - Add New > Project
+   - Importe guirart/nuvem-ensino-app
+   - Clique em Deploy
+
+O primeiro deploy funciona em modo demonstração, mesmo sem Supabase.
+
+6. Para ativar login real e banco:
+   - Crie um projeto no Supabase.
+   - Execute supabase/schema.sql no SQL Editor.
+   - Configure na Vercel:
+
+     NEXT_PUBLIC_SUPABASE_URL
+     NEXT_PUBLIC_SUPABASE_ANON_KEY
+     NEXT_PUBLIC_APP_URL
+
+Leia o README.md para as instruções completas.
