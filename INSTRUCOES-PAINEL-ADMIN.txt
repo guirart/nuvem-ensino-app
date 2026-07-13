@@ -1,0 +1,31 @@
+PAINEL ADMINISTRATIVO DE AULAS — PASSO A PASSO
+
+1. Suba todos os arquivos deste projeto para o repositório GitHub.
+2. Na Vercel, mantenha Node.js 24.x e faça um novo deploy sem cache.
+3. Crie um projeto no Supabase.
+4. No SQL Editor do Supabase:
+   - projeto novo: execute supabase/schema.sql;
+   - projeto que já usou o schema antigo: execute supabase/admin-video-upload.sql.
+5. Na Vercel > Environment Variables, adicione:
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   NEXT_PUBLIC_APP_URL
+6. Faça novo deploy.
+7. Crie sua conta pelo botão Cadastro do aplicativo.
+8. Abra supabase/PROMOVER-ADMIN.sql, troque SEU_EMAIL@EXEMPLO.COM pelo seu e-mail e execute no SQL Editor.
+9. Saia e entre novamente no aplicativo.
+10. Abra /admin/conteudo.
+
+DENTRO DO PAINEL
+
+Etapa 1: crie um curso.
+Etapa 2: crie um módulo dentro do curso.
+Etapa 3: selecione o vídeo e clique em Enviar aula.
+
+Os vídeos ficam em um bucket privado chamado course-videos. O aplicativo gera links temporários somente para administradores e alunos com matrícula ativa.
+
+IMPORTANTE
+
+- Não envie vídeos ao GitHub.
+- O limite máximo de arquivo também depende do plano do Supabase.
+- Para o aluno visualizar o curso, o curso deve estar Publicado e o aluno deve ter uma matrícula ativa na tabela enrollments.
