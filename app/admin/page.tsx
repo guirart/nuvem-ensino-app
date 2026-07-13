@@ -1,32 +1,33 @@
 import Link from "next/link";
-import { BookOpen, Layers3, Plus, Upload, Video } from "lucide-react";
-import { getAdminCatalog } from "@/lib/course-data";
+import { Activity, BookOpen, GraduationCap, Layers3, Plus, Upload, UsersRound, Video } from "lucide-react";
+import { getAdminDashboardData } from "@/lib/admin-data";
 import { isSupabaseConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const catalog = isSupabaseConfigured() ? await getAdminCatalog() : [];
-  const moduleCount = catalog.reduce((sum, course) => sum + course.modules.length, 0);
-  const lessonCount = catalog.reduce(
-    (sum, course) => sum + course.modules.reduce((moduleSum, module) => moduleSum + module.lessons.length, 0),
-    0,
-  );
-  const publishedCount = catalog.filter((course) => course.status === "published").length;
+  const data = isSupabaseConfigured()
+    ? await getAdminDashboardData()
+    : {
+        stats: { courses: 0, publishedCourses: 0, modules: 0, lessons: 0, students: 0, activeEnrollments: 0, completedEnrollments: 0, averageProgress: 0 },
+        recentActivity: [],
+      };
 
   const stats = [
-    [BookOpen, "Cursos", String(catalog.length), `${publishedCount} publicados`],
-    [Layers3, "Módulos", String(moduleCount), "Organização do conteúdo"],
-    [Video, "Aulas", String(lessonCount), "Vídeos cadastrados"],
+    [BookOpen, "Cursos", String(data.stats.courses), `${data.stats.publishedCourses} publicados`],
+    [UsersRound, "Alunos", String(data.stats.students), "Contas de alunos"],
+    [GraduationCap, "Matrículas ativas", String(data.stats.activeEnrollments), `${data.stats.completedEnrollments} concluídas`],
+    [Video, "Aulas", String(data.stats.lessons), `${data.stats.modules} módulos`],
+    [Activity, "Progresso médio", `${data.stats.averageProgress}%`, "Matrículas ativas e concluídas"],
   ] as const;
 
   return (
     <div>
       <p className="text-sm font-extrabold uppercase tracking-[0.1em] text-[var(--brand-dark)]">Operação</p>
       <h1 className="page-title mt-2">Visão geral</h1>
-      <p className="muted mt-3">Gerencie a biblioteca de cursos e envie novas aulas.</p>
+      <p className="muted mt-3">Os números abaixo são calculados diretamente a partir do Supabase.</p>
 
-      <div className="mt-7 grid gap-4 sm:grid-cols-3">
+      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map(([Icon, label, value, detail]) => (
           <div key={label} className="card p-5">
             <div className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--brand-pale)] text-[var(--brand-dark)]"><Icon size={22} /></div>
@@ -35,16 +36,27 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <section className="card mt-6 p-6 sm:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-xs font-extrabold uppercase tracking-wider text-[var(--brand-dark)]">Ação principal</p><h2 className="mt-2 text-xl font-black">Publicar uma nova aula</h2><p className="muted mt-2 max-w-xl text-sm leading-6">Crie o curso e o módulo, escolha o vídeo e acompanhe o progresso do upload.</p></div>
-          <Link href="/admin/conteudo" className="btn-primary shrink-0"><Upload size={18} /> Abrir painel de aulas</Link>
-        </div>
-      </section>
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <section className="card p-6 sm:p-7">
+          <div className="flex items-center justify-between gap-4"><div><p className="text-xs font-extrabold uppercase tracking-wider text-[var(--brand-dark)]">Atividade real</p><h2 className="mt-2 text-xl font-black">Últimas movimentações</h2></div></div>
+          <div className="mt-5 divide-y divide-[var(--line)]">
+            {data.recentActivity.length === 0 ? <p className="py-5 text-sm text-[#647b83]">Ainda não há matrículas ou aulas registradas.</p> : data.recentActivity.map((item) => (
+              <div key={item.id} className="flex gap-3 py-4"><div className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--brand-pale)] text-[var(--brand-dark)]">{item.type === "lesson" ? <Video size={17} /> : <GraduationCap size={17} />}</div><div className="min-w-0 flex-1"><p className="font-bold">{item.title}</p><p className="muted mt-1 text-sm">{item.detail}</p></div><time className="muted shrink-0 text-xs">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(item.occurredAt))}</time></div>
+            ))}
+          </div>
+        </section>
 
-      {catalog.length === 0 ? (
-        <section className="card mt-6 p-6 text-center"><Plus className="mx-auto text-[var(--brand-dark)]" /><h2 className="mt-3 font-black">Comece pelo primeiro curso</h2><p className="muted mt-2 text-sm">O catálogo ainda está vazio.</p><Link href="/admin/conteudo" className="btn-primary mt-5">Criar conteúdo</Link></section>
-      ) : null}
+        <section className="card p-6 sm:p-7">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--brand-dark)]">Ações rápidas</p>
+          <h2 className="mt-2 text-xl font-black">Administrar plataforma</h2>
+          <div className="mt-5 grid gap-3">
+            <Link href="/admin/cursos/novo" className="btn-primary justify-start"><Plus size={18} /> Criar curso</Link>
+            <Link href="/admin/conteudo" className="btn-secondary justify-start"><Upload size={18} /> Enviar aula</Link>
+            <Link href="/admin/alunos" className="btn-secondary justify-start"><UsersRound size={18} /> Cadastrar aluno</Link>
+            <Link href="/admin/matriculas" className="btn-secondary justify-start"><GraduationCap size={18} /> Criar matrícula</Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

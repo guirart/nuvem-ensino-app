@@ -1,0 +1,52 @@
+ATUALIZAÇÃO DO PAINEL ADMINISTRATIVO — PASSO A PASSO
+
+1. Extraia o ZIP da atualização.
+2. Copie tudo que está dentro da pasta extraída.
+3. Cole dentro da pasta local do repositório nuvem-ensino-app.
+4. Quando o Windows perguntar, escolha Substituir os arquivos.
+5. Abra o GitHub Desktop.
+6. Faça o commit com a mensagem:
+   Painel administrativo com dados reais
+7. Clique em Push origin.
+
+SUPABASE
+
+8. No Supabase, abra SQL Editor > New query.
+9. Abra o arquivo supabase/admin-operational-backend.sql.
+10. Copie todo o conteúdo, cole no SQL Editor e clique em Run.
+11. O resultado esperado é: Success. No rows returned.
+
+QUARTA VARIÁVEL DA VERCEL
+
+12. No Supabase, abra Settings > API Keys.
+13. Na seção Secret keys, copie a chave default que começa com sb_secret_.
+14. Na Vercel, abra Settings > Environment Variables.
+15. Adicione:
+
+Key:
+SUPABASE_SECRET_KEY
+
+Value:
+cole a chave completa sb_secret_...
+
+16. Marque Production and Preview.
+17. Deixe Sensitive ligado.
+18. Salve.
+
+ATENÇÃO: não use NEXT_PUBLIC no nome dessa variável. Não coloque essa chave no GitHub.
+
+DEPLOY
+
+19. Na Vercel, abra Deployments.
+20. Faça Redeploy sem utilizar o cache anterior.
+
+TESTE
+
+21. Abra /admin.
+22. Confira se a visão geral mostra os números do banco.
+23. Abra Cursos e teste Novo curso e Editar.
+24. Abra Alunos e teste Novo usuário.
+25. Abra Matrículas e teste Nova matrícula.
+26. Abra Aulas e envie um vídeo curto para teste.
+
+As estatísticas passam a ser calculadas com courses, modules, lessons, profiles, enrollments e lesson_progress do Supabase.

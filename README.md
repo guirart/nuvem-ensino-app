@@ -1,112 +1,130 @@
 # NU.V.E.M Ensino — aplicativo de cursos
 
-Plataforma mobile em Next.js para médicos acessarem aulas, materiais, progresso e certificados. Esta versão inclui um painel administrativo funcional para criar cursos, criar módulos e fazer upload de videoaulas.
+Plataforma mobile em Next.js para médicos acessarem cursos, aulas, materiais, progresso e certificados. Esta versão possui painel administrativo conectado ao Supabase, com CRUD de cursos, módulos, aulas, usuários e matrículas.
 
-## Funcionalidade administrativa integrada
+## O que está funcional
 
-A rota `/admin/conteudo` permite:
+### Painel administrativo
 
-- criar cursos;
-- definir curso como rascunho ou publicado;
-- criar módulos e datas de liberação;
-- enviar vídeos grandes com upload retomável pelo protocolo TUS;
-- acompanhar a porcentagem enviada;
-- cadastrar a aula automaticamente no banco;
-- listar e excluir aulas;
-- acessar o painel também pelo celular.
+- visão geral com números calculados diretamente do banco;
+- cursos publicados, rascunhos e arquivados;
+- professor responsável por curso;
+- quantidade real de módulos, aulas e matrículas;
+- progresso médio calculado pelas aulas concluídas;
+- criação e edição de cursos;
+- criação, edição e exclusão de módulos;
+- upload retomável de videoaulas;
+- edição e exclusão de aulas;
+- cadastro, edição e exclusão de usuários;
+- perfis de aluno, professor e administrador;
+- criação, alteração e exclusão de matrículas;
+- validade, status e progresso de cada matrícula;
+- busca e filtros em cursos, usuários e matrículas;
+- logout, menu mobile e navegação ativa.
 
-Os vídeos não passam pela Vercel. O navegador envia diretamente para um bucket privado do Supabase Storage. O aluno recebe uma URL temporária somente quando possui matrícula ativa. O Supabase recomenda uploads retomáveis para arquivos maiores que 6 MB e para conexões instáveis.
+### Área do aluno
 
-## Tecnologias
+- login e cadastro pelo Supabase Auth;
+- cursos liberados por matrícula;
+- módulos com data de liberação;
+- player com URL temporária de vídeo privado;
+- conclusão de aulas e progresso real;
+- perfil e certificados.
 
-- Next.js 16 e React 19;
-- TypeScript e Tailwind CSS;
-- Supabase Auth, Postgres e Storage;
-- `tus-js-client` para upload retomável;
-- Vercel para deploy;
-- PWA instalável.
-
-## Configuração do Supabase
-
-### Projeto novo
-
-1. Crie o projeto no Supabase.
-2. Abra **SQL Editor**.
-3. Execute `supabase/schema.sql`.
-
-### Projeto que já executou o schema anterior
-
-Execute somente:
-
-```text
-supabase/admin-video-upload.sql
-```
-
-Esse arquivo adiciona os campos de vídeo, cria o bucket privado `course-videos` e instala as políticas de segurança.
-
-## Variáveis de ambiente
-
-Adicione na Vercel e em `.env.local`:
+## Variáveis da Vercel
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
-NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_SUA_CHAVE_PUBLICA
+NEXT_PUBLIC_APP_URL=https://SEU-APP.vercel.app
+SUPABASE_SECRET_KEY=sb_secret_SUA_CHAVE_PRIVADA
 ```
 
-Não coloque chaves no GitHub.
+`SUPABASE_SECRET_KEY` é usada apenas nas rotas do servidor para criar contas, trocar e-mail/senha e excluir usuários. Nunca coloque essa chave em uma variável `NEXT_PUBLIC` e nunca a envie ao GitHub.
 
-## Criar o primeiro administrador
+Projetos legados também podem usar `SUPABASE_SERVICE_ROLE_KEY` no lugar de `SUPABASE_SECRET_KEY`.
 
-1. Faça o cadastro normalmente no aplicativo.
-2. Abra `supabase/PROMOVER-ADMIN.sql`.
-3. Troque `SEU_EMAIL@EXEMPLO.COM` pelo e-mail cadastrado.
-4. Execute no SQL Editor.
-5. Saia e entre novamente.
+## Banco de dados
 
-O menu **Painel administrativo** aparecerá na área do aluno.
-
-## Enviar a primeira aula
-
-1. Abra `/admin/conteudo`.
-2. Crie o curso.
-3. Crie um módulo.
-4. Selecione curso e módulo.
-5. Informe título, descrição, ordem e duração.
-6. Escolha o arquivo de vídeo.
-7. Clique em **Enviar aula**.
-
-O vídeo é salvo em:
+Como o schema principal já foi executado, abra o SQL Editor do Supabase e execute:
 
 ```text
-course-videos/{courseId}/{moduleId}/{arquivo}
+supabase/admin-operational-backend.sql
 ```
 
-## Fazer a aula aparecer para um aluno
+Essa migração:
 
-O curso precisa estar com status `published`. O aluno também precisa possuir um registro na tabela `enrollments` com status `active` ou `completed` e prazo ainda válido.
+- corrige a segurança de alteração de perfis;
+- impede que um aluno transforme a própria conta em administrador;
+- libera o vínculo real entre professores e cursos;
+- cria índices usados pelas estatísticas;
+- configura atualização automática de `updated_at`.
 
-## Desenvolvimento local
+## Fluxo administrativo
+
+### Criar curso
+
+```text
+/admin/cursos → Novo curso
+```
+
+Preencha título, carga horária, status e professor. Depois use **Editar** para alterar os dados e organizar módulos e aulas.
+
+### Enviar aula
+
+```text
+/admin/conteudo
+```
+
+Crie o curso, crie o módulo, selecione o vídeo e envie. O arquivo vai diretamente para o bucket privado `course-videos` no Supabase Storage.
+
+### Cadastrar usuário
+
+```text
+/admin/alunos → Novo usuário
+```
+
+O administrador define e-mail, senha temporária e perfil. Essa operação exige `SUPABASE_SECRET_KEY`.
+
+### Criar matrícula
+
+```text
+/admin/matriculas → Nova matrícula
+```
+
+Escolha o aluno, o curso, o status, a data inicial e a expiração opcional.
+
+## Como as estatísticas são calculadas
+
+- **Cursos:** total de linhas em `courses`;
+- **Alunos:** perfis com `role = student`;
+- **Matrículas ativas:** status `active` e prazo ainda válido;
+- **Aulas:** total de linhas em `lessons`;
+- **Progresso de uma matrícula:** aulas concluídas pelo aluno dividido pelo total de aulas do curso;
+- **Progresso médio de um curso:** média do progresso das matrículas ativas ou concluídas;
+- **Progresso médio geral:** média do progresso de todas as matrículas válidas.
+
+Não existem valores de exemplo nas telas administrativas.
+
+## Desenvolvimento
 
 Requisitos: Node.js 24.x.
 
 ```bash
 npm install
+npm run typecheck
+npm run build
 npm run dev
 ```
 
-Validação:
-
-```bash
-npm run typecheck
-npm run build
-```
+O workflow do GitHub Actions usa `npm install`, pois o projeto não inclui `package-lock.json`.
 
 ## Segurança
 
 - o bucket de vídeos é privado;
-- somente perfis `admin` podem inserir, alterar ou excluir vídeos;
-- alunos só podem gerar uma URL temporária quando possuem matrícula ativa;
-- a role é conferida no servidor e nas políticas RLS;
-- nenhum segredo é incluído no navegador;
-- `controlsList="nodownload"` reduz o download casual, mas nenhuma plataforma web consegue impedir completamente gravação de tela.
+- upload e exclusão de vídeos exigem perfil administrativo;
+- alunos só acessam vídeos de cursos em que possuem matrícula válida;
+- o painel confere a função `admin` no servidor e no RLS;
+- criação e exclusão de contas passam por rotas de servidor;
+- a chave secreta nunca é entregue ao navegador;
+- o perfil do usuário comum não pode alterar a própria `role`.

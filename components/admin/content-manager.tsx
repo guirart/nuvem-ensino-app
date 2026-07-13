@@ -129,22 +129,20 @@ export function ContentManager({
       const slug = slugify(String(form.get("slug") || title));
       if (!title || !slug) throw new Error("Informe o título do curso.");
 
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sua sessão expirou. Entre novamente.");
-
-      const { error } = await supabase.from("courses").insert({
-        title,
-        slug,
-        short_title: String(form.get("shortTitle") || "").trim() || title,
-        description: String(form.get("description") || "").trim() || null,
-        workload_minutes: Number(form.get("workloadMinutes") || 0),
-        status: String(form.get("status") || "draft"),
-        created_by: user.id,
+      const response = await fetch("/api/admin/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          slug,
+          shortTitle: String(form.get("shortTitle") || "").trim() || title,
+          description: String(form.get("description") || "").trim() || null,
+          workloadMinutes: Number(form.get("workloadMinutes") || 0),
+          status: String(form.get("status") || "draft"),
+        }),
       });
-      if (error) throw new Error(error.message);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erro ao criar curso.");
 
       formElement.reset();
       refreshWithMessage("Curso criado. Agora crie um módulo para ele.");
@@ -169,14 +167,18 @@ export function ContentManager({
       if (!targetCourseId || !title) throw new Error("Escolha o curso e informe o módulo.");
 
       const releaseValue = String(form.get("releaseAt") || "");
-      const supabase = createClient();
-      const { error } = await supabase.from("modules").insert({
-        course_id: targetCourseId,
-        title,
-        position: Number(form.get("position") || 1),
-        release_at: releaseValue ? new Date(releaseValue).toISOString() : null,
+      const response = await fetch("/api/admin/modules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId: targetCourseId,
+          title,
+          position: Number(form.get("position") || 1),
+          releaseAt: releaseValue || null,
+        }),
       });
-      if (error) throw new Error(error.message);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erro ao criar módulo.");
 
       formElement.reset();
       refreshWithMessage("Módulo criado. Ele já pode receber aulas.");
@@ -225,22 +227,24 @@ export function ContentManager({
       });
 
       const durationMinutes = Number(form.get("durationMinutes") || 0);
-      const { error } = await supabase.from("lessons").insert({
-        module_id: targetModuleId,
-        title,
-        description: String(form.get("description") || "").trim() || null,
-        lesson_type: "video",
-        position: Number(form.get("position") || 1),
-        duration_seconds: Math.round(durationMinutes * 60),
-        video_provider: "supabase",
-        video_storage_path: uploadedPath,
-        video_asset_id: uploadedPath,
-        is_preview: Boolean(form.get("isPreview")),
+      const response = await fetch("/api/admin/lessons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleId: targetModuleId,
+          title,
+          description: String(form.get("description") || "").trim() || null,
+          position: Number(form.get("position") || 1),
+          durationMinutes,
+          videoStoragePath: uploadedPath,
+          isPreview: Boolean(form.get("isPreview")),
+        }),
       });
+      const result = await response.json();
 
-      if (error) {
+      if (!response.ok) {
         await supabase.storage.from("course-videos").remove([uploadedPath]);
-        throw new Error(error.message);
+        throw new Error(result.error || "Erro ao registrar aula.");
       }
 
       formElement.reset();
@@ -262,10 +266,9 @@ export function ContentManager({
     setFeedback(null);
     setBusy("delete");
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from("lessons").delete().eq("id", lessonId);
-      if (error) throw new Error(error.message);
-      if (storagePath) await supabase.storage.from("course-videos").remove([storagePath]);
+      const response = await fetch(`/api/admin/lessons/${lessonId}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erro ao excluir aula.");
       refreshWithMessage("Aula excluída.");
     } catch (error) {
       setFeedback({ type: "error", message: error instanceof Error ? error.message : "Erro ao excluir aula." });
